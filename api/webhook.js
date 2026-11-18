@@ -1,5 +1,6 @@
 const TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const API = TOKEN ? `https://api.telegram.org/bot${TOKEN}` : null;
 
 async function telegram(method, payload) {
@@ -24,7 +25,9 @@ const services = "Наши услуги:\n\n• Короткий пост или
 const orderPrompt = "Чтобы оформить заявку, отправьте одним сообщением:\n\n1. Какой текст нужен?\n2. Тема и цель текста\n3. Желаемый объём\n4. Срок выполнения\n5. Ваш контакт для ответа (если отличается от Telegram).\n\nНе отправляйте пароли и платёжные данные.";
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(200).send("TextyNaZakaz bot endpoint is active");
-  if (!TOKEN) return res.status(503).send("BOT_TOKEN is not configured");
+  if (!TOKEN || !WEBHOOK_SECRET) return res.status(503).send("Bot configuration is incomplete");
+  const suppliedSecret = req.headers?.["x-telegram-bot-api-secret-token"];
+  if (suppliedSecret !== WEBHOOK_SECRET) return res.status(401).send("Unauthorized");
   try {
     const update = req.body || {};
     if (update.callback_query) {
