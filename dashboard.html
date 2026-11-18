@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Панель управления — 300 рублей</title>
+<style>
+:root{color-scheme:dark;--bg:#10131b;--panel:#191f2b;--muted:#aab4c5;--accent:#8bd3ff;--line:#30394a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#f4f7fb;font:15px/1.5 system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:28px 18px}
+a{color:var(--accent)}h1{font-size:clamp(28px,5vw,42px);margin:8px 0}p,.muted{color:var(--muted)}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:24px 0}
+.card,section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.metric{font-size:34px;font-weight:750;color:var(--accent)}.small{font-size:13px;color:var(--muted)}
+.layout{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:16px}label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}
+input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#101722;color:#fff;font:inherit}
+button{border:0;border-radius:9px;padding:11px 14px;background:var(--accent);color:#071521;font-weight:700;cursor:pointer;margin-top:12px}
+button.secondary{background:transparent;border:1px solid var(--line);color:#fff}.order{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
+.order-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.pill{font-size:12px;padding:4px 8px;border-radius:20px;background:#26384b;color:var(--accent)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions select{max-width:210px}.notice{border-left:3px solid var(--accent);padding:10px 12px;background:#172332;border-radius:8px;font-size:13px;color:var(--muted);margin:16px 0}
+@media(max-width:760px){.layout{grid-template-columns:1fr}}
+</style></head><body><main>
+<div class="top"><a href="/">← На главную</a><span class="small">Проект «300 рублей»</span></div>
+<h1>Панель управления заказами</h1><p>Счётчики рассчитываются по добавленным записям. Неоплаченные заказы не считаются доходом.</p>
+<div class="grid">
+<div class="card"><div class="small">Найдено заказов / клиентов</div><div class="metric" id="found">0</div><div class="small">Цель: 100 потенциальных заказчиков</div></div>
+<div class="card"><div class="small">Выполняется</div><div class="metric" id="active">0</div><div class="small">Заказы в работе</div></div>
+<div class="card"><div class="small">Выполнено</div><div class="metric" id="done">0</div><div class="small">Переданы заказчику, ожидают оплаты</div></div>
+<div class="card"><div class="small">Оплачено</div><div class="metric" id="paidCount">0</div><div class="small" id="revenue">Получено: 0 ₽</div></div>
+</div>
+<div class="grid">
+<div class="card"><div class="small">Потенциальные заказчики до цели</div><div class="metric" id="remainingLeads">100</div></div>
+<div class="card"><div class="small">Проекты до цели 50 выполненных</div><div class="metric" id="remainingProjects">50</div></div>
+<div class="card"><div class="small">Ожидает оплаты</div><div class="metric" id="pending">0 ₽</div></div>
+</div>
+<div class="notice">Важно: пока данные сохраняются в памяти этого браузера на этом устройстве. Это не общая база и не синхронизируется между устройствами. Для общей постоянной панели нужно подключить защищённое серверное хранилище и авторизацию.</div>
+<div class="layout">
+<section><h2>Добавить заказчика / заказ</h2>
+<form id="orderForm">
+<label for="client">Заказчик или компания *</label><input id="client" required maxlength="120" placeholder="Имя или название">
+<label for="task">Что требуется</label><textarea id="task" rows="3" maxlength="1000" placeholder="Краткое описание проекта"></textarea>
+<label for="amount">Согласованная сумма, ₽</label><input id="amount" type="number" min="0" step="1" value="300">
+<label for="status">Статус</label><select id="status"><option value="found">Найден</option><option value="active">Выполняется</option><option value="done">Выполнен</option><option value="paid">Оплачен</option></select>
+<label for="url">Ссылка на объявление или контакт (необязательно)</label><input id="url" type="url" placeholder="https://…">
+<button type="submit">Добавить в учёт</button>
+</form></section>
+<section><div class="top"><h2>Список заказов</h2><button class="secondary" id="export">Экспорт CSV</button></div>
+<div id="orders"><p class="muted">Пока нет записей. Добавьте найденного заказчика или заказ.</p></div>
+</section></div>
+</main>
+<script>
+const KEY='textynazakaz_orders_v1';
+const labels={found:'Найден',active:'Выполняется',done:'Выполнен',paid:'Оплачен'};
+let orders=[];try{orders=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(orders))orders=[];}catch{orders=[];}
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(KEY,JSON.stringify(orders));render();}
+function money(n){return new Intl.NumberFormat('ru-RU').format(n||0)+' ₽';}
+function render(){
+ const count=s=>orders.filter(o=>o.status===s).length;
+ $('found').textContent=orders.length;$('active').textContent=count('active');$('done').textContent=count('done');$('paidCount').textContent=count('paid');
+ const revenue=orders.filter(o=>o.status==='paid').reduce((s,o)=>s+o.amount,0);
+ const pending=orders.filter(o=>o.status==='done').reduce((s,o)=>s+o.amount,0);
+ $('revenue').textContent='Получено: '+money(revenue);$('pending').textContent=money(pending);
+ $('remainingLeads').textContent=Math.max(0,100-orders.length);$('remainingProjects').textContent=Math.max(0,50-count('done')-count('paid'));
+ $('orders').innerHTML=orders.length?'':'<p class="muted">Пока нет записей. Добавьте найденного заказчика или заказ.</p>';
+ for(const o of [...orders].reverse()){
+  const el=document.createElement('article');el.className='order';
+  const head=document.createElement('div');head.className='order-head';
+  const title=document.createElement('strong');title.textContent=o.client;
+  const pill=document.createElement('span');pill.className='pill';pill.textContent=labels[o.status];
+  head.append(title,pill);el.append(head);
+  const desc=document.createElement('p');desc.textContent=o.task||'Описание не добавлено';el.append(desc);
+  const info=document.createElement('div');info.className='small';info.textContent='Сумма: '+money(o.amount)+' · Добавлен: '+new Date(o.created).toLocaleDateString('ru-RU');el.append(info);
+  if(o.url){const link=document.createElement('a');link.href=o.url;link.target='_blank';link.rel='noopener';link.textContent='Открыть объявление';el.append(link);}
+  const actions=document.createElement('div');actions.className='actions';
+  const sel=document.createElement('select');for(const [v,t] of Object.entries(labels)){const op=document.createElement('option');op.value=v;op.textContent=t;op.selected=o.status===v;sel.append(op);}
+  sel.addEventListener('change',()=>{o.status=sel.value;save();});
+  const del=document.createElement('button');del.className='secondary';del.textContent='Удалить';del.addEventListener('click',()=>{if(confirm('Удалить эту запись?')){orders=orders.filter(x=>x.id!==o.id);save();}});
+  actions.append(sel,del);el.append(actions);$('orders').append(el);
+ }
+}
+$('orderForm').addEventListener('submit',e=>{e.preventDefault();orders.push({id:crypto.randomUUID(),client:$('client').value.trim(),task:$('task').value.trim(),amount:Math.max(0,Number($('amount').value)||0),status:$('status').value,url:$('url').value.trim(),created:new Date().toISOString()});e.target.reset();$('amount').value=300;save();});
+$('export').addEventListener('click',()=>{const rows=[['Заказчик','Описание','Сумма ₽','Статус','Ссылка','Дата'],...orders.map(o=>[o.client,o.task,o.amount,labels[o.status],o.url,o.created])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='zakazy-300-rub.csv';a.click();URL.revokeObjectURL(a.href);});
+render();
+</script></body></html>
