@@ -13,6 +13,7 @@
 - [Русские примеры текстов](portfolio.md)
 - [English writing samples](portfolio-en.md)
 - [Russian language quality-review demo](portfolio-ai-language-review-ru.md) — синтетический пример проверки ответов, созданный с AI-помощью; не реальная клиентская разметка.
+- [Bilingual product listing demo](portfolio-product-description-demo-en-ru.md) — fictional English/Russian product copy with a fact-check checklist; not client work.
 
 ## Настройка Vercel
 Добавить переменные окружения для Production (и Preview при необходимости):
