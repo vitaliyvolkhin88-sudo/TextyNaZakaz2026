@@ -17,11 +17,15 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 @media(max-width:760px){.layout{grid-template-columns:1fr}}
 </style></head><body><main>
 <div class="top"><a href="/">← На главную</a><span class="small">Проект «300 рублей»</span></div>
-<h1>Панель управления заказами</h1><p>Счётчики рассчитываются по добавленным записям. Неоплаченные заказы не считаются доходом.</p>
+<h1>Панель учёта заявок и дохода</h1><p>Отмечайте только фактические действия: подготовленный отклик, отправку, ответ, договор, выполнение и подтверждённую оплату — раздельно.</p>
 <div class="grid">
-<div class="card"><div class="small">Найдено заказов / клиентов</div><div class="metric" id="found">0</div><div class="small">Цель: 100 потенциальных заказчиков</div></div>
-<div class="card"><div class="small">Выполняется</div><div class="metric" id="active">0</div><div class="small">Заказы в работе</div></div>
-<div class="card"><div class="small">Выполнено</div><div class="metric" id="done">0</div><div class="small">Переданы заказчику, ожидают оплаты</div></div>
+<div class="card"><div class="small">Найденные лиды</div><div class="metric" id="found">0</div><div class="small">Потенциальные заказчики</div></div>
+<div class="card"><div class="small">Отклики подготовлены</div><div class="metric" id="prepared">0</div><div class="small">Черновики, ещё не отправлены</div></div>
+<div class="card"><div class="small">Отклики отправлены</div><div class="metric" id="sent">0</div><div class="small">Фактическая отправка</div></div>
+<div class="card"><div class="small">Получены ответы</div><div class="metric" id="replied">0</div><div class="small">Ответы от заказчиков</div></div>
+<div class="card"><div class="small">Договорённости</div><div class="metric" id="contracted">0</div><div class="small">Согласован заказ / условия</div></div>
+<div class="card"><div class="small">В работе</div><div class="metric" id="active">0</div><div class="small">Выполнение начато</div></div>
+<div class="card"><div class="small">Выполнено, не оплачено</div><div class="metric" id="done">0</div><div class="small">Передано заказчику</div></div>
 <div class="card"><div class="small">Оплачено</div><div class="metric" id="paidCount">0</div><div class="small" id="revenue">Получено: 0 ₽</div></div>
 </div>
 <div class="grid">
@@ -36,7 +40,7 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 <label for="client">Заказчик или компания *</label><input id="client" required maxlength="120" placeholder="Имя или название">
 <label for="task">Что требуется</label><textarea id="task" rows="3" maxlength="1000" placeholder="Краткое описание проекта"></textarea>
 <label for="amount">Согласованная сумма, ₽</label><input id="amount" type="number" min="0" step="1" value="300">
-<label for="status">Статус</label><select id="status"><option value="found">Найден</option><option value="active">Выполняется</option><option value="done">Выполнен</option><option value="paid">Оплачен</option></select>
+<label for="status">Статус</label><select id="status"><option value="found">Лид найден</option><option value="prepared">Отклик подготовлен</option><option value="sent">Отклик отправлен</option><option value="replied">Получен ответ</option><option value="contracted">Условия согласованы</option><option value="active">Выполняется</option><option value="done">Выполнено, ожидает оплаты</option><option value="paid">Оплачено</option></select>
 <label for="url">Ссылка на объявление или контакт (необязательно)</label><input id="url" type="url" placeholder="https://…">
 <button type="submit">Добавить в учёт</button>
 </form></section>
@@ -46,14 +50,14 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 </main>
 <script>
 const KEY='textynazakaz_orders_v1';
-const labels={found:'Найден',active:'Выполняется',done:'Выполнен',paid:'Оплачен'};
+const labels={found:'Лид найден',prepared:'Отклик подготовлен',sent:'Отклик отправлен',replied:'Получен ответ',contracted:'Условия согласованы',active:'Выполняется',done:'Выполнено, ожидает оплаты',paid:'Оплачено'};
 let orders=[];try{orders=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(orders))orders=[];}catch{orders=[];}
 const $=id=>document.getElementById(id);
 function save(){localStorage.setItem(KEY,JSON.stringify(orders));render();}
 function money(n){return new Intl.NumberFormat('ru-RU').format(n||0)+' ₽';}
 function render(){
  const count=s=>orders.filter(o=>o.status===s).length;
- $('found').textContent=count('found');$('active').textContent=count('active');$('done').textContent=count('done');$('paidCount').textContent=count('paid');
+ $('found').textContent=count('found');$('prepared').textContent=count('prepared');$('sent').textContent=count('sent');$('replied').textContent=count('replied');$('contracted').textContent=count('contracted');$('active').textContent=count('active');$('done').textContent=count('done');$('paidCount').textContent=count('paid');
  const revenue=orders.filter(o=>o.status==='paid').reduce((s,o)=>s+o.amount,0);
  const pending=orders.filter(o=>o.status==='done').reduce((s,o)=>s+o.amount,0);
  $('revenue').textContent='Получено: '+money(revenue);$('pending').textContent=money(pending);
