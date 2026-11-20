@@ -15,6 +15,12 @@
 - [Russian language quality-review demo](portfolio-ai-language-review-ru.md) — синтетический пример проверки ответов, созданный с AI-помощью; не реальная клиентская разметка.
 - [Bilingual product listing demo](portfolio-product-description-demo-en-ru.md) — fictional English/Russian product copy with a fact-check checklist; not client work.
 
+## Учёт заявок
+
+Страница [панели учёта](dashboard.html) отдельно отмечает найденные лиды, подготовленные и отправленные отклики, ответы, согласованные условия, работу, выполненные и оплаченные заказы. Выручка считается только по статусу «Оплачено».
+
+**Ограничение:** записи сохраняются только в локальном хранилище браузера на одном устройстве. Это не общая база, не резервная копия и не синхронизация с Telegram. Не заносите туда пароли, платёжные реквизиты или другие секреты.
+
 ## Настройка Vercel
 Добавить переменные окружения для Production (и Preview при необходимости):
 - `BOT_TOKEN` — токен Telegram-бота от BotFather.
