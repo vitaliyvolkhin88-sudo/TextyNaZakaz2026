@@ -14,12 +14,12 @@
 
   function csvCell(value) {
     const raw = String(value ?? "");
-    const safe = /^[\\u0000-\\u0020]*[=+\\-@]/.test(raw) ? "'" + raw : raw;
+    const safe = /^[\u0000-\u0020]*[=+\-@]/.test(raw) ? "'" + raw : raw;
     return '"' + safe.replaceAll('"', '""') + '"';
   }
 
   function toCsv(rows) {
-    return "\\uFEFF" + rows.map((row) => row.map(csvCell).join(";")).join("\\r\\n");
+    return "\uFEFF" + rows.map((row) => row.map(csvCell).join(";")).join("\r\n");
   }
 
   const api = { normalizeHttpUrl, csvCell, toCsv };
