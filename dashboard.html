@@ -48,6 +48,7 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 <div id="orders"><p class="muted">Пока нет записей. Добавьте найденного заказчика или заказ.</p></div>
 </section></div>
 </main>
+<script src="/dashboard-utils.js"></script>
 <script>
 const KEY='textynazakaz_orders_v1';
 const labels={found:'Лид найден',prepared:'Отклик подготовлен',sent:'Отклик отправлен',replied:'Получен ответ',contracted:'Условия согласованы',active:'Выполняется',done:'Выполнено, ожидает оплаты',paid:'Оплачено'};
@@ -71,7 +72,9 @@ function render(){
   head.append(title,pill);el.append(head);
   const desc=document.createElement('p');desc.textContent=o.task||'Описание не добавлено';el.append(desc);
   const info=document.createElement('div');info.className='small';info.textContent='Сумма: '+money(o.amount)+' · Добавлен: '+new Date(o.created).toLocaleDateString('ru-RU');el.append(info);
-  if(o.url){const link=document.createElement('a');link.href=o.url;link.target='_blank';link.rel='noopener';link.textContent='Открыть объявление';el.append(link);}
+  const safeUrl=TextyDashboardUtils.normalizeHttpUrl(o.url);
+  if(safeUrl){const link=document.createElement('a');link.href=safeUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Открыть объявление';el.append(link);}
+  else if(o.url){const note=document.createElement('div');note.className='small';note.textContent='Ссылка скрыта: разрешены только адреса http:// и https://';el.append(note);}
   const actions=document.createElement('div');actions.className='actions';
   const sel=document.createElement('select');for(const [v,t] of Object.entries(labels)){const op=document.createElement('option');op.value=v;op.textContent=t;op.selected=o.status===v;sel.append(op);}
   sel.addEventListener('change',()=>{o.status=sel.value;save();});
@@ -79,7 +82,14 @@ function render(){
   actions.append(sel,del);el.append(actions);$('orders').append(el);
  }
 }
-$('orderForm').addEventListener('submit',e=>{e.preventDefault();orders.push({id:crypto.randomUUID(),client:$('client').value.trim(),task:$('task').value.trim(),amount:Math.max(0,Number($('amount').value)||0),status:$('status').value,url:$('url').value.trim(),created:new Date().toISOString()});e.target.reset();$('amount').value=300;save();});
-$('export').addEventListener('click',()=>{const rows=[['Заказчик','Описание','Сумма ₽','Статус','Ссылка','Дата'],...orders.map(o=>[o.client,o.task,o.amount,labels[o.status],o.url,o.created])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replaceAll('"','""')+'"').join(';')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='zakazy-300-rub.csv';a.click();URL.revokeObjectURL(a.href);});
+$('orderForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const rawUrl=$('url').value.trim();
+ const safeUrl=TextyDashboardUtils.normalizeHttpUrl(rawUrl);
+ if(rawUrl&&!safeUrl){alert('Ссылка должна быть обычным адресом, начинающимся с http:// или https://');return;}
+ orders.push({id:crypto.randomUUID(),client:$('client').value.trim(),task:$('task').value.trim(),amount:Math.max(0,Number($('amount').value)||0),status:$('status').value,url:safeUrl,created:new Date().toISOString()});
+ e.target.reset();$('amount').value=300;save();
+});
+$('export').addEventListener('click',()=>{const rows=[['Заказчик','Описание','Сумма ₽','Статус','Ссылка','Дата'],...orders.map(o=>[o.client,o.task,o.amount,labels[o.status],o.url,o.created])];const csv=TextyDashboardUtils.toCsv(rows);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='zakazy-300-rub.csv';a.click();URL.revokeObjectURL(a.href);});
 render();
 </script></body></html>
