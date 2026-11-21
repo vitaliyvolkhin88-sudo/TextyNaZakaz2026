@@ -24,5 +24,5 @@ test("CSV export neutralizes spreadsheet formulas after leading whitespace or co
 
 test("CSV output keeps UTF-8 BOM and CRLF rows", () => {
   assert.equal(toCsv([["Имя", "Задача"], ["=1+1", "Обычный текст"]]),
-    '\\uFEFF"Имя";"Задача"\\r\\n"\'=1+1";"Обычный текст"');
+    '\uFEFF"Имя";"Задача"\r\n"\'=1+1";"Обычный текст"');
 });
