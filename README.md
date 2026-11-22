@@ -15,8 +15,10 @@
 - [Russian language quality-review demo](portfolio-ai-language-review-ru.md) — синтетический пример проверки ответов, созданный с AI-помощью; не реальная клиентская разметка.
 - [Bilingual product listing demo](portfolio-product-description-demo-en-ru.md) — fictional English/Russian product copy with a fact-check checklist; not client work.
 - [Russian Gmail/email AI quality-review demo](portfolio-gmail-ai-evaluation-demo-ru.md) — synthetic business-email review; no personal mailbox data was accessed and this is not client work.
+- [App localization QA demo](portfolio-app-localization-qa-demo.md) — synthetic English-to-Russian UI proofreading example; AI-assisted, not paid client work or a human-only translation test.
 
 ## Поиск заказов и учёт
+- [Ежедневный поиск международных заказов — 22 ноября 2026](leads/2026-11-22-research.md)
 - [Ежедневный поиск международных заказов — 21 ноября 2026](leads/2026-11-21-research.md)
 - Страница [панели учёта](dashboard.html) отдельно отмечает найденные лиды, подготовленные и отправленные отклики, ответы, согласованные условия, работу, выполненные и оплаченные заказы. Выручка считается только по статусу «Оплачено».
 - Панель принимает только ссылки `http://` и `https://`; экспорт CSV защищён от формул электронных таблиц. Логика вынесена в `dashboard-utils.js` и покрыта тестами.
