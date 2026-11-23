@@ -39,6 +39,25 @@ function response() {
   };
 }
 
+async function withTelegramMock(run) {
+  const previousFetch = global.fetch;
+  const calls = [];
+  global.fetch = async (_url, options) => {
+    calls.push(JSON.parse(options.body));
+    return {
+      ok: true,
+      async json() {
+        return { ok: true, result: { message_id: calls.length } };
+      }
+    };
+  };
+  try {
+    await run(calls);
+  } finally {
+    global.fetch = previousFetch;
+  }
+}
+
 test("GET reports endpoint status without requiring bot secrets", async () => {
   const handler = loadHandler();
   const res = response();
@@ -87,4 +106,52 @@ test("POST rejects a missing Telegram webhook secret header", async () => {
 
   assert.equal(res.statusCode, 401);
   assert.equal(res.body, "Unauthorized");
+});
+
+test("privacy command explains what data is forwarded to the administrator", async () => {
+  const handler = loadHandler({
+    BOT_TOKEN: "test-token-not-a-real-credential",
+    ADMIN_CHAT_ID: "123",
+    WEBHOOK_SECRET: "test-secret"
+  });
+  const res = response();
+
+  await withTelegramMock(async (calls) => {
+    await handler({
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": "test-secret" },
+      body: { message: { chat: { id: 42 }, text: "/privacy" } }
+    }, res);
+
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].text, /текст вашего сообщения/i);
+    assert.match(calls[0].text, /Telegram chat ID/i);
+    assert.match(calls[0].text, /отдельная база заявок пока не подключена/i);
+  });
+
+  assert.equal(res.statusCode, 200);
+});
+
+test("order prompt includes a concise data-use notice", async () => {
+  const handler = loadHandler({
+    BOT_TOKEN: "test-token-not-a-real-credential",
+    ADMIN_CHAT_ID: "123",
+    WEBHOOK_SECRET: "test-secret"
+  });
+  const res = response();
+
+  await withTelegramMock(async (calls) => {
+    await handler({
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": "test-secret" },
+      body: { message: { chat: { id: 42 }, text: "/order" } }
+    }, res);
+
+    assert.equal(calls.length, 1);
+    assert.match(calls[0].text, /если приём заявок включён/i);
+    assert.match(calls[0].text, //privacy/);
+    assert.match(calls[0].text, /пароли/i);
+  });
+
+  assert.equal(res.statusCode, 200);
 });
