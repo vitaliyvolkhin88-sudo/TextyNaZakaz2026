@@ -16,8 +16,10 @@
 - [Bilingual product listing demo](portfolio-product-description-demo-en-ru.md) — fictional English/Russian product copy with a fact-check checklist; not client work.
 - [Russian Gmail/email AI quality-review demo](portfolio-gmail-ai-evaluation-demo-ru.md) — synthetic business-email review; no personal mailbox data was accessed and this is not client work.
 - [App localization QA demo](portfolio-app-localization-qa-demo.md) — synthetic English-to-Russian UI proofreading example; AI-assisted, not paid client work or a human-only translation test.
+- [Russian proofreading QA checklist](portfolio-proofreading-qa-checklist-ru.md) — AI-assisted process template, not a human-only proofreading sample or client work.
 
 ## Поиск заказов и учёт
+- [Ежедневный поиск международных заказов — 23 ноября 2026](leads/2026-11-23-research.md)
 - [Ежедневный поиск международных заказов — 22 ноября 2026](leads/2026-11-22-research.md)
 - [Ежедневный поиск международных заказов — 21 ноября 2026](leads/2026-11-21-research.md)
 - Страница [панели учёта](dashboard.html) отдельно отмечает найденные лиды, подготовленные и отправленные отклики, ответы, согласованные условия, работу, выполненные и оплаченные заказы. Выручка считается только по статусу «Оплачено».
@@ -36,14 +38,15 @@
 
 Webhook нужно установить запросом к Telegram Bot API `setWebhook`, передав тот же `WEBHOOK_SECRET` как параметр `secret_token`. Токен и секрет использовать только в защищённой среде. Не публиковать токен в репозитории и не отправлять его в чат.
 
-## Текущие ограничения — проверено 22 ноября 2026
+## Текущие ограничения — повторно проверено 23 ноября 2026
 - Без `BOT_TOKEN` бот не может отвечать.
 - Без `ADMIN_CHAT_ID` бот не пересылает заявки и честно сообщает, что приём ещё не подключён.
 - Хранилище заказов и онлайн-оплата пока не подключены; не сообщать клиенту, что заявка принята, если пересылка не удалась.
 - Цены на странице — стартовое предложение, окончательную стоимость нужно согласовать до выполнения заказа.
 - В `api/webhook.js` обработчик ошибок сейчас возвращает HTTP 200 даже при сбое отправки в Telegram. Поэтому Telegram не повторит доставку автоматически. Перед production-запуском нужно подключить постоянное хранилище для идемпотентной обработки `update_id`, затем настроить корректные ответы при ошибках; без этого простое изменение кода может привести к дублированию уведомлений.
-- Команда Vercel называется `TextyNaZakaz2026`, её фактический slug — `texty-na-zakaz2026` (без дополнительного дефиса перед 2026). Интеграция видит команду, но список проектов и развёртываний в этой команде пуст; запрос проекта `texstnazakaz2026` возвращает 404, а создание связанного Git-проекта — 403 Forbidden. GitHub показывает контекст Vercel со статусом success на одном коммите, но это не подтверждает доступное Production-развёртывание: сам deployment через API не найден. Для повторной попытки пользователь должен одобрить свежую одноразовую ссылку доступа к команде; такие ссылки действуют 10 минут и не должны сохраняться в репозитории.
-- GitHub Actions workflow `.github/workflows/validate.yml` запускает `npm test` и проверяет наличие главных страниц. Подтверждённые запуски 44698634301 и 44879239981 завершились успешно. Это подтверждает прохождение CI, но не работу Telegram или Production-сайта.
+- Команда Vercel называется `TextyNaZakaz2026`, её фактический slug — `texty-na-zakaz2026`. Интеграция видит команду, но повторная проверка 23 ноября 2026 показала ноль проектов и ноль развёртываний. Production URL не подтверждён.
+- GitHub Actions workflow `.github/workflows/validate.yml` запускает `npm test` и проверяет наличие главных страниц. Последние ранее задокументированные успешные запуски подтверждают только CI, но не работу Telegram или Production-сайта. В текущем запуске новый workflow не запускался.
+- Telegram не подключён к доступному инструменту проверки в текущем запуске; живой webhook и пересылка заявок не проверены.
 
 ## Локальная структура
 - `index.html` — посадочная страница.
