@@ -19,10 +19,12 @@ async function send(chatId, text, reply_markup) {
 const menu = { inline_keyboard: [
   [{ text: "📝 Заказать текст", callback_data: "order" }],
   [{ text: "💼 Услуги и цены", callback_data: "services" }],
-  [{ text: "ℹ️ Как это работает", callback_data: "help" }]
+  [{ text: "ℹ️ Как это работает", callback_data: "help" }],
+  [{ text: "🔐 Данные и конфиденциальность", callback_data: "privacy" }]
 ]};
 const services = "Наши услуги:\n\n• Короткий пост или объявление — от 300 ₽\n• Описание товара или услуги — от 500 ₽\n• Рекламный текст — от 700 ₽\n\nИтоговая цена зависит от объёма и задачи. До начала работы согласуем стоимость.";
-const orderPrompt = "Чтобы оформить заявку, отправьте одним сообщением:\n\n1. Какой текст нужен?\n2. Тема и цель текста\n3. Желаемый объём\n4. Срок выполнения\n5. Ваш контакт для ответа (если отличается от Telegram).\n\nНе отправляйте пароли и платёжные данные.";
+const privacyNotice = "О данных и конфиденциальности:\n\nЕсли приём заявок включён, текст вашего сообщения, имя, Telegram username (если указан) и Telegram chat ID передаются администратору проекта в Telegram только для ответа на заявку. Отдельная база заявок пока не подключена.\n\nНе отправляйте пароли, коды подтверждения, паспортные данные и платёжные реквизиты. Telegram обрабатывает сообщения в соответствии со своими правилами и политикой конфиденциальности.";
+const orderPrompt = "Чтобы оформить заявку, отправьте одним сообщением:\n\n1. Какой текст нужен?\n2. Тема и цель текста\n3. Желаемый объём\n4. Срок выполнения\n5. Ваш контакт для ответа (если отличается от Telegram).\n\nПеред отправкой: если приём заявок включён, текст, имя, username (если указан) и Telegram chat ID передаются администратору в Telegram. Подробнее: /privacy.\nНе отправляйте пароли, коды подтверждения, паспортные данные и платёжные реквизиты.";
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(200).send("TextyNaZakaz bot endpoint is active");
   if (!TOKEN || !WEBHOOK_SECRET) return res.status(503).send("Bot configuration is incomplete");
@@ -36,6 +38,7 @@ module.exports = async (req, res) => {
       if (chatId && q.data === "services") await send(chatId, services, menu);
       else if (chatId && q.data === "help") await send(chatId, "Вы выбираете услугу и описываете задачу одним сообщением. Детали, цену и срок согласуем до начала работы.", menu);
       else if (chatId && q.data === "order") await send(chatId, orderPrompt);
+      else if (chatId && q.data === "privacy") await send(chatId, privacyNotice, menu);
       return res.status(200).send("OK");
     }
     const message = update.message;
@@ -43,10 +46,11 @@ module.exports = async (req, res) => {
     const chatId = message.chat.id, text = (message.text || "").trim();
     const name = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ") || "Без имени";
     const username = message.from?.username ? `@${message.from.username}` : "не указан";
-    if (text === "/start" || text === "/menu") await send(chatId, "Здравствуйте! Это TextyNaZakaz — помогаем подготовить посты, объявления и рекламные тексты. Выберите, что вас интересует:", menu);
+    if (text === "/start" || text === "/menu") await send(chatId, "Здравствуйте! Это TextyNaZakaz — помогаем подготовить посты, объявления и рекламные тексты. Выберите, что вас интересует. Информация о данных: /privacy.", menu);
     else if (text === "/services") await send(chatId, services, menu);
-    else if (text === "/order") await send(chatId, orderPrompt);
-    else if (text === "/help") await send(chatId, "Команды: /start — меню, /services — услуги и цены, /order — оставить заявку.");
+    else if (text === "/order") await send(chatId, orderPrompt, menu);
+    else if (text === "/privacy") await send(chatId, privacyNotice, menu);
+    else if (text === "/help") await send(chatId, "Команды: /start — меню, /services — услуги и цены, /order — оставить заявку, /privacy — обработка данных.");
     else if (text.startsWith("/")) await send(chatId, "Не знаю такую команду. Откройте /start, чтобы увидеть меню.");
     else if (text) {
       if (!ADMIN_CHAT_ID) {
