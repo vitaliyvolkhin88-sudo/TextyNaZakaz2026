@@ -149,7 +149,7 @@ test("order prompt includes a concise data-use notice", async () => {
 
     assert.equal(calls.length, 1);
     assert.match(calls[0].text, /если приём заявок включён/i);
-    assert.match(calls[0].text, //privacy/);
+    assert.match(calls[0].text, /\\/privacy/);
     assert.match(calls[0].text, /пароли/i);
   });
 
