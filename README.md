@@ -18,8 +18,10 @@
 - [Russian Gmail/email AI quality-review demo](portfolio-gmail-ai-evaluation-demo-ru.md) — synthetic business-email review; no personal mailbox data was accessed and this is not client work.
 - [App localization QA demo](portfolio-app-localization-qa-demo.md) — synthetic English-to-Russian UI proofreading example; AI-assisted, not paid client work or a human-only translation test.
 - [Russian proofreading QA checklist](portfolio-proofreading-qa-checklist-ru.md) — AI-assisted process template, not a human-only proofreading sample or client work.
+- [Russian speech evaluation template](portfolio-russian-speech-evaluation-template.md) — synthetic evaluation worksheet; no real audio was recorded or assessed.
 
 ## Поиск заказов и учёт
+- [Ежедневный поиск международных заказов — 24 ноября 2026](leads/2026-11-24-research.md)
 - [Ежедневный поиск международных заказов — 23 ноября 2026](leads/2026-11-23-research.md)
 - [Ежедневный поиск международных заказов — 22 ноября 2026](leads/2026-11-22-research.md)
 - [Ежедневный поиск международных заказов — 21 ноября 2026](leads/2026-11-21-research.md)
@@ -39,14 +41,14 @@
 
 Webhook нужно установить запросом к Telegram Bot API `setWebhook`, передав тот же `WEBHOOK_SECRET` как параметр `secret_token`. Токен и секрет использовать только в защищённой среде. Не публиковать токен в репозитории и не отправлять его в чат.
 
-## Текущие ограничения — повторно проверено 23 ноября 2026
+## Текущие ограничения — повторно проверено 24 ноября 2026
 - Без `BOT_TOKEN` бот не может отвечать.
 - Без `ADMIN_CHAT_ID` бот не пересылает заявки и честно сообщает, что приём ещё не подключён.
 - Хранилище заказов и онлайн-оплата пока не подключены; не сообщать клиенту, что заявка принята, если пересылка не удалась.
 - Цены на странице — стартовое предложение, окончательную стоимость нужно согласовать до выполнения заказа.
 - В `api/webhook.js` обработчик ошибок сейчас возвращает HTTP 200 даже при сбое отправки в Telegram. Поэтому Telegram не повторит доставку автоматически. Перед production-запуском нужно подключить постоянное хранилище для идемпотентной обработки `update_id`, затем настроить корректные ответы при ошибках; без этого простое изменение кода может привести к дублированию уведомлений.
 - Команда Vercel называется `TextyNaZakaz2026`, её фактический slug — `texty-na-zakaz2026`. Интеграция видит команду, но повторная проверка 23 ноября 2026 показала ноль проектов и ноль развёртываний. Production URL не подтверждён.
-- GitHub Actions workflow `.github/workflows/validate.yml` запускает `npm test` и проверяет наличие главных страниц. Три автоматических запуска 23 ноября 2026 (runs #29–31) завершились успешно. Это подтверждает только CI, но не работу Telegram или Production-сайта; последующие изменения документации также автоматически запускают CI.
+- GitHub Actions workflow `.github/workflows/validate.yml` запускает `npm test` и проверяет наличие главных страниц. 24 ноября обнаружена синтаксическая ошибка в `test/webhook.test.js`, из-за которой runs #36–40 завершались ошибкой; исправление сохранено в commit `26c410502f9fe66b01bfd9f4f6c080e278e2eb47`. Runs #41 и #42 после исправления завершились успешно. Успешный CI подтверждает только тесты репозитория, но не работу Telegram или Production-сайта.
 - Telegram не подключён к доступному инструменту проверки в текущем запуске; живой webhook и пересылка заявок не проверены.
 
 ## Локальная структура
