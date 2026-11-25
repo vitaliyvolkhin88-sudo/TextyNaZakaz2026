@@ -8,7 +8,7 @@ a{color:var(--accent)}h1{font-size:clamp(28px,5vw,42px);margin:8px 0}p,.muted{co
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:24px 0}
 .card,section{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
 .metric{font-size:34px;font-weight:750;color:var(--accent)}.small{font-size:13px;color:var(--muted)}
-.layout{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:16px}label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}
+.layout{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:16px}label{display:block;margin:12px 0 5px;color:var(--muted);font-size:13px}.money-fields{display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:10px}
 input,select,textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;background:#101722;color:#fff;font:inherit}
 button{border:0;border-radius:9px;padding:11px 14px;background:var(--accent);color:#071521;font-weight:700;cursor:pointer;margin-top:12px}
 button.secondary{background:transparent;border:1px solid var(--line);color:#fff}.order{border:1px solid var(--line);border-radius:12px;padding:14px;margin:10px 0}
@@ -39,7 +39,7 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 <form id="orderForm">
 <label for="client">Заказчик или компания *</label><input id="client" required maxlength="120" placeholder="Имя или название">
 <label for="task">Что требуется</label><textarea id="task" rows="3" maxlength="1000" placeholder="Краткое описание проекта"></textarea>
-<label for="amount">Согласованная сумма, ₽</label><input id="amount" type="number" min="0" step="1" value="300">
+<div class="money-fields"><div><label for="amount">Сумма</label><input id="amount" type="number" min="0" step="0.01" value="300"></div><div><label for="currency">Валюта</label><select id="currency"><option value="RUB">RUB ₽</option><option value="USD">USD $</option><option value="EUR">EUR €</option><option value="GBP">GBP £</option></select></div></div>
 <label for="status">Статус</label><select id="status"><option value="found">Лид найден</option><option value="prepared">Отклик подготовлен</option><option value="sent">Отклик отправлен</option><option value="replied">Получен ответ</option><option value="contracted">Условия согласованы</option><option value="active">Выполняется</option><option value="done">Выполнено, ожидает оплаты</option><option value="paid">Оплачено</option></select>
 <label for="url">Ссылка на объявление или контакт (необязательно)</label><input id="url" type="url" placeholder="https://…">
 <button type="submit">Добавить в учёт</button>
@@ -55,13 +55,13 @@ const labels={found:'Лид найден',prepared:'Отклик подгото�
 let orders=[];try{orders=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(orders))orders=[];}catch{orders=[];}
 const $=id=>document.getElementById(id);
 function save(){localStorage.setItem(KEY,JSON.stringify(orders));render();}
-function money(n){return new Intl.NumberFormat('ru-RU').format(n||0)+' ₽';}
+function money(n,currency='RUB'){return TextyDashboardUtils.formatMoney(n,currency);}
 function render(){
  const count=s=>orders.filter(o=>o.status===s).length;
  $('found').textContent=count('found');$('prepared').textContent=count('prepared');$('sent').textContent=count('sent');$('replied').textContent=count('replied');$('contracted').textContent=count('contracted');$('active').textContent=count('active');$('done').textContent=count('done');$('paidCount').textContent=count('paid');
- const revenue=orders.filter(o=>o.status==='paid').reduce((s,o)=>s+o.amount,0);
- const pending=orders.filter(o=>o.status==='done').reduce((s,o)=>s+o.amount,0);
- $('revenue').textContent='Получено: '+money(revenue);$('pending').textContent=money(pending);
+ const revenue=TextyDashboardUtils.formatCurrencyTotals(orders,'paid');
+ const pending=TextyDashboardUtils.formatCurrencyTotals(orders,'done');
+ $('revenue').textContent='Получено: '+revenue;$('pending').textContent=pending;
  $('remainingLeads').textContent=Math.max(0,100-count('found'));$('remainingProjects').textContent=Math.max(0,50-count('done')-count('paid'));
  $('orders').innerHTML=orders.length?'':'<p class="muted">Пока нет записей. Добавьте найденного заказчика или заказ.</p>';
  for(const o of [...orders].reverse()){
@@ -71,7 +71,7 @@ function render(){
   const pill=document.createElement('span');pill.className='pill';pill.textContent=labels[o.status];
   head.append(title,pill);el.append(head);
   const desc=document.createElement('p');desc.textContent=o.task||'Описание не добавлено';el.append(desc);
-  const info=document.createElement('div');info.className='small';info.textContent='Сумма: '+money(o.amount)+' · Добавлен: '+new Date(o.created).toLocaleDateString('ru-RU');el.append(info);
+  const info=document.createElement('div');info.className='small';info.textContent='Сумма: '+money(o.amount,o.currency||'RUB')+' · Добавлен: '+new Date(o.created).toLocaleDateString('ru-RU');el.append(info);
   const safeUrl=TextyDashboardUtils.normalizeHttpUrl(o.url);
   if(safeUrl){const link=document.createElement('a');link.href=safeUrl;link.target='_blank';link.rel='noopener noreferrer';link.textContent='Открыть объявление';el.append(link);}
   else if(o.url){const note=document.createElement('div');note.className='small';note.textContent='Ссылка скрыта: разрешены только адреса http:// и https://';el.append(note);}
@@ -87,9 +87,9 @@ $('orderForm').addEventListener('submit',e=>{
  const rawUrl=$('url').value.trim();
  const safeUrl=TextyDashboardUtils.normalizeHttpUrl(rawUrl);
  if(rawUrl&&!safeUrl){alert('Ссылка должна быть обычным адресом, начинающимся с http:// или https://');return;}
- orders.push({id:crypto.randomUUID(),client:$('client').value.trim(),task:$('task').value.trim(),amount:Math.max(0,Number($('amount').value)||0),status:$('status').value,url:safeUrl,created:new Date().toISOString()});
- e.target.reset();$('amount').value=300;save();
+ orders.push({id:crypto.randomUUID(),client:$('client').value.trim(),task:$('task').value.trim(),amount:Math.max(0,Number($('amount').value)||0),currency:TextyDashboardUtils.normalizeCurrency($('currency').value),status:$('status').value,url:safeUrl,created:new Date().toISOString()});
+ e.target.reset();$('amount').value=300;$('currency').value='RUB';save();
 });
-$('export').addEventListener('click',()=>{const rows=[['Заказчик','Описание','Сумма ₽','Статус','Ссылка','Дата'],...orders.map(o=>[o.client,o.task,o.amount,labels[o.status],o.url,o.created])];const csv=TextyDashboardUtils.toCsv(rows);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='zakazy-300-rub.csv';a.click();URL.revokeObjectURL(a.href);});
+$('export').addEventListener('click',()=>{const rows=[['Заказчик','Описание','Сумма','Валюта','Статус','Ссылка','Дата'],...orders.map(o=>[o.client,o.task,o.amount,o.currency||'RUB',labels[o.status],o.url,o.created])];const csv=TextyDashboardUtils.toCsv(rows);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='zakazy-300-rub.csv';a.click();URL.revokeObjectURL(a.href);});
 render();
 </script></body></html>
