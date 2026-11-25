@@ -44,7 +44,7 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 <label for="url">Ссылка на объявление или контакт (необязательно)</label><input id="url" type="url" placeholder="https://…">
 <button type="submit">Добавить в учёт</button>
 </form></section>
-<section><div class="top"><h2>Список заказов</h2><button class="secondary" id="export">Экспорт CSV</button></div>
+<section><div class="top"><h2>Список заказов</h2><div class="actions"><button class="secondary" id="backupJson">Резервная копия JSON</button><button class="secondary" id="restoreJson">Восстановить JSON</button><button class="secondary" id="export">Экспорт CSV</button><input id="importJsonFile" type="file" accept=".json,application/json" hidden></div></div><p class="small">JSON-файл позволяет перенести или восстановить записи на другом устройстве. Восстановление заменяет текущий список после подтверждения.</p>
 <div id="orders"><p class="muted">Пока нет записей. Добавьте найденного заказчика или заказ.</p></div>
 </section></div>
 </main>
@@ -89,6 +89,28 @@ $('orderForm').addEventListener('submit',e=>{
  if(rawUrl&&!safeUrl){alert('Ссылка должна быть обычным адресом, начинающимся с http:// или https://');return;}
  orders.push({id:crypto.randomUUID(),client:$('client').value.trim(),task:$('task').value.trim(),amount:Math.max(0,Number($('amount').value)||0),currency:TextyDashboardUtils.normalizeCurrency($('currency').value),status:$('status').value,url:safeUrl,created:new Date().toISOString()});
  e.target.reset();$('amount').value=300;$('currency').value='RUB';save();
+});
+$('backupJson').addEventListener('click',()=>{
+ try{
+  const json=TextyDashboardUtils.serializeOrdersJson(orders);
+  const blob=new Blob([json],{type:'application/json;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='texty-orders-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  window.setTimeout(()=>URL.revokeObjectURL(url),0);
+ }catch(error){alert('Не удалось создать резервную копию: '+error.message);}
+});
+$('restoreJson').addEventListener('click',()=>$('importJsonFile').click());
+$('importJsonFile').addEventListener('change',async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ try{
+  if(file.size>1024*1024)throw new Error('Файл больше 1 МБ.');
+  const restored=TextyDashboardUtils.parseOrdersJson(await file.text());
+  if(!confirm('Восстановить '+restored.length+' записей? Текущий список будет заменён.'))return;
+  localStorage.setItem(KEY,JSON.stringify(restored));
+  orders=restored;render();
+  alert('Восстановлено записей: '+orders.length+'.');
+ }catch(error){alert('Не удалось восстановить резервную копию: '+error.message);}
+ finally{event.target.value='';}
 });
 $('export').addEventListener('click',()=>{const rows=[['Заказчик','Описание','Сумма','Валюта','Статус','Ссылка','Дата'],...orders.map(o=>[o.client,o.task,o.amount,o.currency||'RUB',labels[o.status],o.url,o.created])];const csv=TextyDashboardUtils.toCsv(rows);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='zakazy-300-rub.csv';a.click();URL.revokeObjectURL(a.href);});
 render();
