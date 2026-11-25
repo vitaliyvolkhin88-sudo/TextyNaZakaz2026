@@ -19,8 +19,10 @@
 - [App localization QA demo](portfolio-app-localization-qa-demo.md) — synthetic English-to-Russian UI proofreading example; AI-assisted, not paid client work or a human-only translation test.
 - [Russian proofreading QA checklist](portfolio-proofreading-qa-checklist-ru.md) — AI-assisted process template, not a human-only proofreading sample or client work.
 - [Russian speech evaluation template](portfolio-russian-speech-evaluation-template.md) — synthetic evaluation worksheet; no real audio was recorded or assessed.
+- [Marketplace listing demo EN/RU](portfolio-marketplace-listing-demo-en-ru.md) — fictional eBay/Facebook Marketplace listing and fact-check checklist; not a real seller listing or client work.
 
 ## Поиск заказов и учёт
+- [Ежедневный поиск международных заказов — 25 ноября 2026](leads/2026-11-25-research.md)
 - [Ежедневный поиск международных заказов — 24 ноября 2026](leads/2026-11-24-research.md)
 - [Ежедневный поиск международных заказов — 23 ноября 2026](leads/2026-11-23-research.md)
 - [Ежедневный поиск международных заказов — 22 ноября 2026](leads/2026-11-22-research.md)
@@ -41,7 +43,7 @@
 
 Webhook нужно установить запросом к Telegram Bot API `setWebhook`, передав тот же `WEBHOOK_SECRET` как параметр `secret_token`. Токен и секрет использовать только в защищённой среде. Не публиковать токен в репозитории и не отправлять его в чат.
 
-## Текущие ограничения — повторно проверено 24 ноября 2026
+## Текущие ограничения — повторно проверено 25 ноября 2026
 - Без `BOT_TOKEN` бот не может отвечать.
 - Без `ADMIN_CHAT_ID` бот не пересылает заявки и честно сообщает, что приём ещё не подключён.
 - Хранилище заказов и онлайн-оплата пока не подключены; не сообщать клиенту, что заявка принята, если пересылка не удалась.
