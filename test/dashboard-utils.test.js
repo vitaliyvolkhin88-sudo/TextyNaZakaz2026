@@ -7,7 +7,9 @@ const {
   totalsByCurrency,
   formatCurrencyTotals,
   csvCell,
-  toCsv
+  toCsv,
+  parseOrdersJson,
+  serializeOrdersJson
 } = require("../dashboard-utils.js");
 
 test("only HTTP and HTTPS links are accepted", () => {
@@ -56,4 +58,35 @@ test("CSV export neutralizes spreadsheet formulas after leading whitespace or co
 test("CSV output keeps UTF-8 BOM and CRLF rows", () => {
   assert.equal(toCsv([["Имя", "Задача"], ["=1+1", "Обычный текст"]]),
     '\uFEFF"Имя";"Задача"\r\n"\'=1+1";"Обычный текст"');
+});
+
+
+test("JSON backup round-trips valid orders and keeps legacy records in RUB", () => {
+  const source = [
+    { id: "eur-1", client: "Client", task: "Proofread", amount: 12.5, currency: "EUR", status: "paid", url: "https://example.com", created: "2026-11-25T08:00:00+01:00", privateField: "must not export" },
+    { id: "old-1", client: "Legacy", task: "", amount: 300, status: "found", url: "", created: "2026-11-25T07:00:00.000Z" }
+  ];
+  const backup = serializeOrdersJson(source);
+  const restored = parseOrdersJson(backup);
+  assert.deepEqual(restored, [
+    { id: "eur-1", client: "Client", task: "Proofread", amount: 12.5, currency: "EUR", status: "paid", url: "https://example.com/", created: "2026-11-25T07:00:00.000Z" },
+    { id: "old-1", client: "Legacy", task: "", amount: 300, currency: "RUB", status: "found", url: "", created: "2026-11-25T07:00:00.000Z" }
+  ]);
+  assert.doesNotMatch(backup, /must not export/);
+});
+
+test("JSON restore rejects malformed records and unsafe links", () => {
+  const base = { id: "1", client: "Client", task: "", amount: 10, currency: "RUB", status: "found", url: "", created: "2026-11-25T07:00:00.000Z" };
+  assert.throws(() => parseOrdersJson("not json"), /valid JSON/);
+  assert.throws(() => parseOrdersJson(JSON.stringify([{ ...base, url: "javascript:alert(1)" }])), /HTTP or HTTPS/);
+  assert.throws(() => parseOrdersJson(JSON.stringify([{ ...base, status: "unknown" }])), /unknown status/);
+  assert.throws(() => parseOrdersJson(JSON.stringify([{ ...base, amount: -1 }])), /non-negative/);
+  assert.throws(() => parseOrdersJson(JSON.stringify([{ ...base, currency: "BTC" }])), /unsupported currency/);
+});
+
+test("JSON restore rejects duplicate IDs, oversized backups, and non-array roots", () => {
+  const order = { id: "same", client: "Client", task: "", amount: 10, status: "found", url: "", created: "2026-11-25T07:00:00.000Z" };
+  assert.throws(() => parseOrdersJson(JSON.stringify([order, order])), /duplicate ID/);
+  assert.throws(() => parseOrdersJson(" ".repeat(1_000_001)), /larger than 1 MB/);
+  assert.throws(() => parseOrdersJson(JSON.stringify({ orders: [order] })), /array of orders/);
 });
