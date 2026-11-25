@@ -38,8 +38,8 @@ test("income totals remain separated by currency and legacy records default to R
   ];
   assert.deepEqual(totalsByCurrency(orders, "paid"), { USD: 20, EUR: 15, RUB: 300 });
   assert.deepEqual(totalsByCurrency(orders, "done"), { USD: 50 });
-  assert.match(formatCurrencyTotals(orders, "paid"), /USD/);
-  assert.match(formatCurrencyTotals(orders, "paid"), /EUR/);
+  assert.ok(formatCurrencyTotals(orders, "paid").includes("$"));
+  assert.ok(formatCurrencyTotals(orders, "paid").includes("€"));
 });
 
 test("CSV cells quote delimiters and embedded quotes", () => {
