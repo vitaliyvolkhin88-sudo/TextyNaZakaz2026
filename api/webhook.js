@@ -2,6 +2,7 @@ const TOKEN = process.env.BOT_TOKEN;
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
 const API = TOKEN ? `https://api.telegram.org/bot${TOKEN}` : null;
+const MAX_ORDER_TEXT_LENGTH = 2500;
 
 async function telegram(method, payload) {
   if (!API) throw new Error("BOT_TOKEN is not configured");
@@ -24,7 +25,7 @@ const menu = { inline_keyboard: [
 ]};
 const services = "Наши услуги:\n\n• Короткий пост или объявление — от 300 ₽\n• Описание товара или услуги — от 500 ₽\n• Рекламный текст — от 700 ₽\n\nИтоговая цена зависит от объёма и задачи. До начала работы согласуем стоимость.";
 const privacyNotice = "О данных и конфиденциальности:\n\nЕсли приём заявок включён, текст вашего сообщения, имя, Telegram username (если указан) и Telegram chat ID передаются администратору проекта в Telegram только для ответа на заявку. Отдельная база заявок пока не подключена.\n\nНе отправляйте пароли, коды подтверждения, паспортные данные и платёжные реквизиты. Telegram обрабатывает сообщения в соответствии со своими правилами и политикой конфиденциальности.";
-const orderPrompt = "Чтобы оформить заявку, отправьте одним сообщением:\n\n1. Какой текст нужен?\n2. Тема и цель текста\n3. Желаемый объём\n4. Срок выполнения\n5. Ваш контакт для ответа (если отличается от Telegram).\n\nПеред отправкой: если приём заявок включён, текст, имя, username (если указан) и Telegram chat ID передаются администратору в Telegram. Подробнее: /privacy.\nНе отправляйте пароли, коды подтверждения, паспортные данные и платёжные реквизиты.";
+const orderPrompt = "Чтобы оформить заявку, отправьте одним сообщением (до 2500 символов):\n\n1. Какой текст нужен?\n2. Тема и цель текста\n3. Желаемый объём\n4. Срок выполнения\n5. Ваш контакт для ответа (если отличается от Telegram).\n\nПеред отправкой: если приём заявок включён, текст, имя, username (если указан) и Telegram chat ID передаются администратору в Telegram. Подробнее: /privacy.\nНе отправляйте пароли, коды подтверждения, паспортные данные и платёжные реквизиты.";
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(200).send("TextyNaZakaz bot endpoint is active");
   if (!TOKEN || !WEBHOOK_SECRET) return res.status(503).send("Bot configuration is incomplete");
@@ -53,7 +54,9 @@ module.exports = async (req, res) => {
     else if (text === "/help") await send(chatId, "Команды: /start — меню, /services — услуги и цены, /order — оставить заявку, /privacy — обработка данных.");
     else if (text.startsWith("/")) await send(chatId, "Не знаю такую команду. Откройте /start, чтобы увидеть меню.");
     else if (text) {
-      if (!ADMIN_CHAT_ID) {
+      if (text.length > MAX_ORDER_TEXT_LENGTH) {
+        await send(chatId, "Сообщение слишком длинное. Пожалуйста, сократите описание задачи до 2500 символов и отправьте его ещё раз.");
+      } else if (!ADMIN_CHAT_ID) {
         await send(chatId, "Спасибо! Приём заявок временно не подключён: канал получения заказов ещё не настроен. Пожалуйста, попробуйте позже.");
       } else {
         await send(ADMIN_CHAT_ID, "📩 Новая заявка TextyNaZakaz\n\nКлиент: " + name + "\nTelegram: " + username + "\nChat ID: " + chatId + "\n\nЗадача:\n" + text);
