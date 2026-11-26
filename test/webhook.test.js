@@ -132,7 +132,7 @@ test("privacy command explains what data is forwarded to the administrator", asy
   assert.equal(res.statusCode, 200);
 });
 
-test("order prompt includes a concise data-use notice", async () => {
+test("order prompt includes a concise data-use notice and the message limit", async () => {
   const handler = loadHandler({
     BOT_TOKEN: "test-token-not-a-real-credential",
     ADMIN_CHAT_ID: "123",
@@ -151,11 +151,11 @@ test("order prompt includes a concise data-use notice", async () => {
     assert.match(calls[0].text, /если приём заявок включён/i);
     assert.ok(calls[0].text.includes("/privacy"));
     assert.match(calls[0].text, /пароли/i);
+    assert.match(calls[0].text, /до 2500 символов/i);
   });
 
   assert.equal(res.statusCode, 200);
 });
-
 
 test("incoming order is not acknowledged as accepted when ADMIN_CHAT_ID is missing", async () => {
   const handler = loadHandler({
@@ -214,6 +214,36 @@ test("incoming order is forwarded to the administrator before customer confirmat
     assert.match(calls[0].text, /@test_user/);
     assert.equal(calls[1].chat_id, 42);
     assert.match(calls[1].text, /Заявка передана/);
+  });
+
+  assert.equal(res.statusCode, 200);
+});
+
+test("overlong order messages are rejected without forwarding or acceptance", async () => {
+  const handler = loadHandler({
+    BOT_TOKEN: "test-token-not-a-real-credential",
+    ADMIN_CHAT_ID: "777",
+    WEBHOOK_SECRET: "test-secret"
+  });
+  const res = response();
+
+  await withTelegramMock(async (calls) => {
+    await handler({
+      method: "POST",
+      headers: { "x-telegram-bot-api-secret-token": "test-secret" },
+      body: {
+        message: {
+          chat: { id: 42 },
+          from: { first_name: "Test" },
+          text: "x".repeat(2501)
+        }
+      }
+    }, res);
+
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].chat_id, 42);
+    assert.match(calls[0].text, /до 2500 символов/i);
+    assert.doesNotMatch(calls[0].text, /заявка передана/i);
   });
 
   assert.equal(res.statusCode, 200);
