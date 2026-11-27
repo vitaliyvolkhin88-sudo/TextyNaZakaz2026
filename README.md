@@ -21,9 +21,11 @@
 - [Russian proofreading QA checklist](portfolio-proofreading-qa-checklist-ru.md) — AI-assisted process template, not a human-only proofreading sample or client work.
 - [Russian speech evaluation template](portfolio-russian-speech-evaluation-template.md) — synthetic evaluation worksheet; no real audio was recorded or assessed.
 - [Marketplace listing demo EN/RU](portfolio-marketplace-listing-demo-en-ru.md) — fictional eBay/Facebook Marketplace listing and fact-check checklist; not a real seller listing or client work.
+- [Product data preparation how-to demo](portfolio-product-data-howto-demo-en.md) — synthetic beginner guide for organizing product facts and QA; not client work.
 - [Russian audio quality-review demo](portfolio-audio-quality-review-demo-ru.md) — synthetic text-only worksheet; no real audio was recorded or assessed.
 
 ## Поиск заказов и учёт
+- [Ежедневный поиск международных заказов — 27 ноября 2026](leads/2026-11-27-research.md)
 - [Ежедневный поиск международных заказов — 26 ноября 2026](leads/2026-11-26-research.md)
 - [Ежедневный поиск международных заказов — 25 ноября 2026](leads/2026-11-25-research.md)
 - [Ежедневный поиск международных заказов — 24 ноября 2026](leads/2026-11-24-research.md)
@@ -47,14 +49,14 @@ https://<домен-проекта>/api/webhook
 
 Webhook нужно установить запросом к Telegram Bot API setWebhook, передав тот же WEBHOOK_SECRET как параметр secret_token. Токен и секрет использовать только в защищённой среде. Не публиковать токен в репозитории и не отправлять его в чат.
 
-## Текущие ограничения — повторно проверено 26 ноября 2026
+## Текущие ограничения — повторно проверено 27 ноября 2026
 - Без BOT_TOKEN бот не может отвечать.
 - Без ADMIN_CHAT_ID бот не пересылает заявки и честно сообщает, что приём ещё не подключён.
 - Хранилище заказов и онлайн-оплата пока не подключены; не сообщать клиенту, что заявка принята, если пересылка не удалась.
 - Цены на странице — стартовое предложение, окончательную стоимость нужно согласовать до выполнения заказа.
 - В api/webhook.js обработчик ошибок сейчас возвращает HTTP 200 даже при сбое отправки в Telegram. Поэтому Telegram не повторит доставку автоматически. Перед production-запуском нужно подключить постоянное хранилище для идемпотентной обработки update_id, затем настроить корректные ответы при ошибках; без этого простое изменение кода может привести к дублированию уведомлений.
 - Команда Vercel называется TextyNaZakaz2026, её фактический slug — texty-na-zakaz2026. Повторная проверка 26 ноября: 0 проектов, 0 linkedProjects и 0 развёртываний. create_git_project вернул 403 forbidden; open_deployments подтвердил notLinked=true, а deployment lookup по URL GitHub status check вернул 404. Поэтому статус Vercel success в GitHub нельзя считать доказательством живого Production-сайта. Это ограничение текущего подключения/прав интеграции; права владельца команды отдельно не опровергнуты.
-- GitHub Actions workflow .github/workflows/validate.yml запускает npm test и проверяет наличие главных страниц. Кодовая проверка run #81 (ID 45779330536) завершилась success 26 ноября 2026 на commit 39f9182579d43d1df5b7bde092d328fceeb7de46: npm test — 18 тестов пройдены, 0 ошибок; также проверено наличие главных страниц. Последующее обновление этой документации прошло run #82 (ID 45779400008) со статусом success. Это подтверждает CI репозитория, но не тестирует production-сайт и живой Telegram webhook.
+- GitHub Actions workflow .github/workflows/validate.yml запускает npm test и проверяет наличие главных страниц. Последняя проверенная проверка перед сегодняшним обновлением — run #86 (ID 45779679486), success 26 ноября 2026 на commit 2354e9cb29098048b152d4e1fac57cf0ee8e13ac: npm test — 18 тестов пройдены, 0 ошибок; также проверено наличие index.html, index-en.html и dashboard.html. Это подтверждает CI репозитория, но не тестирует production-сайт и живой Telegram webhook.
 - Telegram не подключён к доступному инструменту проверки в текущем запуске; живой webhook и пересылка заявок не проверены.
 
 ## Локальная структура
