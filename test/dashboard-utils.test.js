@@ -9,7 +9,9 @@ const {
   csvCell,
   toCsv,
   parseOrdersJson,
-  serializeOrdersJson
+  serializeOrdersJson,
+  readOrdersStorage,
+  writeOrdersStorage
 } = require("../dashboard-utils.js");
 
 test("only HTTP and HTTPS links are accepted", () => {
@@ -89,4 +91,34 @@ test("JSON restore rejects duplicate IDs, oversized backups, and non-array roots
   assert.throws(() => parseOrdersJson(JSON.stringify([order, order])), /duplicate ID/);
   assert.throws(() => parseOrdersJson(" ".repeat(1_000_001)), /larger than 1 MB/);
   assert.throws(() => parseOrdersJson(JSON.stringify({ orders: [order] })), /array of orders/);
+});
+
+
+test("dashboard storage loads empty and valid order lists", () => {
+  const empty = readOrdersStorage({ getItem: () => null }, "orders");
+  assert.deepEqual(empty, { ok: true, orders: [] });
+
+  const saved = [{ id: "one", status: "found" }];
+  const loaded = readOrdersStorage({ getItem: () => JSON.stringify(saved) }, "orders");
+  assert.deepEqual(loaded, { ok: true, orders: saved });
+});
+
+test("dashboard storage reports damaged data and catches browser storage failures", () => {
+  assert.deepEqual(
+    readOrdersStorage({ getItem: () => "{broken" }, "orders"),
+    { ok: false, orders: [], reason: "read-failed" }
+  );
+  assert.deepEqual(
+    readOrdersStorage({ getItem: () => JSON.stringify({ orders: [] }) }, "orders"),
+    { ok: false, orders: [], reason: "not-array" }
+  );
+  assert.deepEqual(readOrdersStorage(null, "orders"), {
+    ok: false, orders: [], reason: "read-failed"
+  });
+  assert.deepEqual(writeOrdersStorage({
+    setItem() { throw new Error("quota exceeded"); }
+  }, "orders", []), { ok: false });
+  assert.deepEqual(writeOrdersStorage({
+    setItem(key, value) { this.saved = [key, value]; }
+  }, "orders", [{ id: "one" }]), { ok: true });
 });
