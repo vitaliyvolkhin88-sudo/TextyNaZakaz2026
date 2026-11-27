@@ -34,6 +34,7 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 <div class="card"><div class="small">Ожидает оплаты</div><div class="metric" id="pending">0 ₽</div></div>
 </div>
 <div class="notice">Важно: пока данные сохраняются в памяти этого браузера на этом устройстве. Это не общая база и не синхронизируется между устройствами. Для общей постоянной панели нужно подключить защищённое серверное хранилище и авторизацию.</div>
+<div id="storageWarning" class="notice" role="status" hidden></div>
 <div class="layout">
 <section><h2>Добавить заказчика / заказ</h2>
 <form id="orderForm">
@@ -52,11 +53,29 @@ button.secondary{background:transparent;border:1px solid var(--line);color:#fff}
 <script>
 const KEY='textynazakaz_orders_v1';
 const labels={found:'Лид найден',prepared:'Отклик подготовлен',sent:'Отклик отправлен',replied:'Получен ответ',contracted:'Условия согласованы',active:'Выполняется',done:'Выполнено, ожидает оплаты',paid:'Оплачено'};
-let orders=[];try{orders=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(orders))orders=[];}catch{orders=[];}
+let storage=null;try{storage=window.localStorage;}catch{}
+const loaded=TextyDashboardUtils.readOrdersStorage(storage,KEY);
+let orders=loaded.orders;
+let storageBlocked=!loaded.ok;
+let storageWarning=loaded.ok?'':'Не удалось прочитать сохранённые записи. Новые изменения пока остаются только в памяти этой вкладки; восстановите данные из JSON-копии, если она есть.';
 const $=id=>document.getElementById(id);
-function save(){localStorage.setItem(KEY,JSON.stringify(orders));render();}
+function save(){
+ if(storageBlocked){
+  storageWarning='Браузерное хранилище недоступно или содержит повреждённые данные. Изменения не будут записаны поверх старых данных. Можно скачать JSON-копию текущего списка или восстановить резервную копию.';
+  render();return;
+ }
+ const result=TextyDashboardUtils.writeOrdersStorage(storage,KEY,orders);
+ if(!result.ok){
+  storageBlocked=true;
+  storageWarning='Браузер не смог сохранить изменения (например, из-за ограничений хранилища). Скачайте резервную копию JSON; новые записи пока доступны только в этой вкладке.';
+ }else storageWarning='';
+ render();
+}
 function money(n,currency='RUB'){return TextyDashboardUtils.formatMoney(n,currency);}
 function render(){
+ const warning=$('storageWarning');
+ warning.hidden=!storageWarning;
+ warning.textContent=storageWarning;
  const count=s=>orders.filter(o=>o.status===s).length;
  $('found').textContent=count('found');$('prepared').textContent=count('prepared');$('sent').textContent=count('sent');$('replied').textContent=count('replied');$('contracted').textContent=count('contracted');$('active').textContent=count('active');$('done').textContent=count('done');$('paidCount').textContent=count('paid');
  const revenue=TextyDashboardUtils.formatCurrencyTotals(orders,'paid');
@@ -106,7 +125,9 @@ $('importJsonFile').addEventListener('change',async event=>{
   if(file.size>1024*1024)throw new Error('Файл больше 1 МБ.');
   const restored=TextyDashboardUtils.parseOrdersJson(await file.text());
   if(!confirm('Восстановить '+restored.length+' записей? Текущий список будет заменён.'))return;
-  localStorage.setItem(KEY,JSON.stringify(restored));
+  const saved=TextyDashboardUtils.writeOrdersStorage(storage,KEY,restored);
+  if(!saved.ok)throw new Error('Браузер не разрешил сохранить восстановленные данные.');
+  storageBlocked=false;storageWarning='';
   orders=restored;render();
   alert('Восстановлено записей: '+orders.length+'.');
  }catch(error){alert('Не удалось восстановить резервную копию: '+error.message);}
