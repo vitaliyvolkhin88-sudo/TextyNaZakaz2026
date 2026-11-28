@@ -118,22 +118,25 @@
   }
 
   function readOrdersStorage(storage, key) {
+    let raw;
     try {
       if (!storage || typeof storage.getItem !== "function") throw new Error("Storage unavailable");
-      const raw = storage.getItem(key);
-      if (raw == null || raw === "") return { ok: true, orders: [] };
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return { ok: false, orders: [], reason: "not-array" };
-      return { ok: true, orders: parsed };
+      raw = storage.getItem(key);
     } catch {
       return { ok: false, orders: [], reason: "read-failed" };
+    }
+    if (raw == null || raw === "") return { ok: true, orders: [] };
+    try {
+      return { ok: true, orders: parseOrdersJson(raw) };
+    } catch {
+      return { ok: false, orders: [], reason: "invalid-data" };
     }
   }
 
   function writeOrdersStorage(storage, key, orders) {
     try {
       if (!storage || typeof storage.setItem !== "function") throw new Error("Storage unavailable");
-      storage.setItem(key, JSON.stringify(orders));
+      storage.setItem(key, serializeOrdersJson(orders));
       return { ok: true };
     } catch {
       return { ok: false };
