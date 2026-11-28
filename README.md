@@ -12,6 +12,8 @@
 - Портфолио с демонстрационными примерами (они не выдаются за оплаченные клиентские работы).
 
 ## Портфолио
+- [Russian cybersecurity guide sample](portfolio-cybersecurity-guide-demo-ru.md) — AI-assisted educational sample with NCSC source links; not client work.
+- [Jiomart / Meesho product-copy demo](portfolio-jiomart-product-copy-demo-en.md) — fictional marketplace listing and fact-check checklist; not client work.
 - [Русские примеры текстов](portfolio.md)
 - [English writing samples](portfolio-en.md)
 - [Russian language quality-review demo](portfolio-ai-language-review-ru.md) — синтетический пример проверки ответов, созданный с AI-помощью; не реальная клиентская разметка.
@@ -25,6 +27,7 @@
 - [Russian audio quality-review demo](portfolio-audio-quality-review-demo-ru.md) — synthetic text-only worksheet; no real audio was recorded or assessed.
 
 ## Поиск заказов и учёт
+- [Ежедневный поиск международных заказов — 28 ноября 2026](leads/2026-11-28-research.md)
 - [Ежедневный поиск международных заказов — 27 ноября 2026](leads/2026-11-27-research.md)
 - [Уточнение вакансий и интеграций — 27 ноября 2026](leads/2026-11-27-verification-update.md)
 - [Ежедневный поиск международных заказов — 26 ноября 2026](leads/2026-11-26-research.md)
