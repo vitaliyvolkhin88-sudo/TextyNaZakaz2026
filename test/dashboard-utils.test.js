@@ -94,31 +94,86 @@ test("JSON restore rejects duplicate IDs, oversized backups, and non-array roots
 });
 
 
-test("dashboard storage loads empty and valid order lists", () => {
+test("dashboard storage loads empty and validates stored orders", () => {
   const empty = readOrdersStorage({ getItem: () => null }, "orders");
   assert.deepEqual(empty, { ok: true, orders: [] });
 
-  const saved = [{ id: "one", status: "found" }];
+  const saved = [{
+    id: "one", client: "Client", task: "Proofread", amount: 300,
+    currency: "EUR", status: "found", url: "",
+    created: "2026-11-25T07:00:00.000Z"
+  }];
   const loaded = readOrdersStorage({ getItem: () => JSON.stringify(saved) }, "orders");
   assert.deepEqual(loaded, { ok: true, orders: saved });
+
+  const legacy = { ...saved[0], id: "legacy" };
+  delete legacy.currency;
+  const legacyLoaded = readOrdersStorage({ getItem: () => JSON.stringify([legacy]) }, "orders");
+  assert.deepEqual(legacyLoaded, {
+    ok: true,
+    orders: [{ ...legacy, currency: "RUB" }]
+  });
 });
 
-test("dashboard storage reports damaged data and catches browser storage failures", () => {
+test("dashboard storage reports invalid data and catches browser storage failures", () => {
   assert.deepEqual(
     readOrdersStorage({ getItem: () => "{broken" }, "orders"),
-    { ok: false, orders: [], reason: "read-failed" }
+    { ok: false, orders: [], reason: "invalid-data" }
   );
   assert.deepEqual(
     readOrdersStorage({ getItem: () => JSON.stringify({ orders: [] }) }, "orders"),
-    { ok: false, orders: [], reason: "not-array" }
+    { ok: false, orders: [], reason: "invalid-data" }
   );
   assert.deepEqual(readOrdersStorage(null, "orders"), {
     ok: false, orders: [], reason: "read-failed"
   });
+  assert.deepEqual(readOrdersStorage({
+    getItem() { throw new Error("storage blocked"); }
+  }, "orders"), { ok: false, orders: [], reason: "read-failed" });
+
+  const validOrder = {
+    id: "write-1", client: "Client", task: "Proofread", amount: 300,
+    status: "found", url: "", created: "2026-11-25T07:00:00.000Z",
+    privateField: "must not persist"
+  };
   assert.deepEqual(writeOrdersStorage({
     setItem() { throw new Error("quota exceeded"); }
-  }, "orders", []), { ok: false });
+  }, "orders", [validOrder]), { ok: false });
+
+  const persisted = {};
   assert.deepEqual(writeOrdersStorage({
-    setItem(key, value) { this.saved = [key, value]; }
-  }, "orders", [{ id: "one" }]), { ok: true });
+    setItem(key, value) { persisted.key = key; persisted.value = value; }
+  }, "orders", [validOrder]), { ok: true });
+  assert.deepEqual(JSON.parse(persisted.value), [{
+    id: "write-1", client: "Client", task: "Proofread", amount: 300,
+    currency: "RUB", status: "found", url: "",
+    created: "2026-11-25T07:00:00.000Z"
+  }]);
+});
+
+test("dashboard storage rejects malformed records and does not persist them", () => {
+  const valid = {
+    id: "valid-1", client: "Client", task: "", amount: 10,
+    currency: "RUB", status: "found", url: "",
+    created: "2026-11-25T07:00:00.000Z"
+  };
+  const invalidRecords = [
+    null,
+    { ...valid, amount: -1 },
+    { ...valid, status: "unknown" },
+    { ...valid, url: "javascript:alert(1)" }
+  ];
+
+  for (const record of invalidRecords) {
+    assert.deepEqual(
+      readOrdersStorage({ getItem: () => JSON.stringify([record]) }, "orders"),
+      { ok: false, orders: [], reason: "invalid-data" }
+    );
+  }
+
+  let writes = 0;
+  assert.deepEqual(writeOrdersStorage({
+    setItem() { writes += 1; }
+  }, "orders", [null]), { ok: false });
+  assert.equal(writes, 0);
 });
